@@ -35,7 +35,7 @@ enum JsGoal { JSUNDEF, JSVALUE, JSHTML, JSTEXT, JSNONE };
 
 typedef QPair<QString, JsGoal> PJsGoal;
 
-enum AccessAllow { AA_NONE, AA_CSS, AA_JS, AA_CSSJS, AA_ALL };
+enum AccessAllow { AA_NONE = 0, AA_CSS = 1, AA_JS = 2, AA_REDIRECT = 4, AA_ALL = 8 };
 
 class WebPage : public QWebPage {
 	Q_OBJECT
@@ -71,7 +71,7 @@ class WebPage : public QWebPage {
 class NetworkAccessManager : public QNetworkAccessManager {
 	Q_OBJECT
 	public:
-		NetworkAccessManager(QString url, AccessAllow allow):
+		NetworkAccessManager(QString url, int allow):
 			_url(url), _allow(allow), _running_req(0) {}
 
 		int runningRequests() const {
@@ -86,12 +86,10 @@ class NetworkAccessManager : public QNetworkAccessManager {
 
 			/* blocking some http requests */
 			bool allow = false;
-			if ( _allow == AA_ALL || request.url() == _url ||
-				( _allow == AA_CSS && path.endsWith(".css", Qt::CaseInsensitive) ) ||
-				( _allow == AA_JS  && path.endsWith(".js",  Qt::CaseInsensitive) ) ||
-				( _allow == AA_CSSJS &&
-					( path.endsWith(".css", Qt::CaseInsensitive) ||
-					  path.endsWith(".js" , Qt::CaseInsensitive) ) ) )
+			if (  (_allow & AA_ALL) || request.url() == _url ||
+				( (_allow & AA_CSS) && path.endsWith(".css", Qt::CaseInsensitive) ) ||
+				( (_allow & AA_JS)  && path.endsWith(".js",  Qt::CaseInsensitive) ) ||
+				( (_allow & AA_REDIRECT) && _redirect_urls.removeOne(request.url().toString()) ) )
 				allow = true;
 
 			if ( !allow )
@@ -110,12 +108,20 @@ class NetworkAccessManager : public QNetworkAccessManager {
 	public slots:
 		void onFinished() {
 			--_running_req;
+
+			if ( _allow & AA_REDIRECT ) {
+				QNetworkReply *replay = (QNetworkReply *) sender();
+				QUrl redirect_url = replay->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
+				if ( !redirect_url.isEmpty() )
+					_redirect_urls << redirect_url.toString();
+			}
 		}
 
 	private:
 		QString _url;
-		AccessAllow _allow;
+		int _allow;
 		int _running_req;
+		QStringList _redirect_urls;
 };
 
 
@@ -195,7 +201,7 @@ void usage( char *appname, bool fail = true )
 		"Options:" << endl <<
 		"--url <http://url/>" << endl <<
 		"    Html document to obtain from url." << endl <<
-		"--allow {none|css|js|css+js|all}" << endl <<
+		"--allow {none,css,js,redirect,all}" << endl <<
 		"    Allows downloading subdocuments and/or resources" << endl <<
 		"--{value|none|text|html}" << endl <<
 		"    Defined what print on stdout when js code complited" << endl <<
@@ -275,7 +281,7 @@ int main(int argc, char *argv[])
 	QList<PJsGoal> js;
 	JsGoal jsgoal = JSUNDEF;
 	bool enable_js = false;
-	AccessAllow access_allow = AA_NONE;
+	int access_allow = AA_NONE;
 
 	QStringList args = app.arguments();
 	args.pop_front();
@@ -299,19 +305,21 @@ int main(int argc, char *argv[])
 			if ( args.isEmpty() ) {
 				usage(argv[0]);
 			}
-			QString allow = args.takeFirst();
-			if ( allow == "none" ) {
-				access_allow = AA_NONE;
-			} else if ( allow == "js" ) {
-				access_allow = AA_JS;
-			} else if ( allow == "css" ) {
-				access_allow = AA_CSS;
-			} else if ( allow == "css+js" ) {
-				access_allow = AA_CSSJS;
-			} else if ( allow == "all" ) {
-				access_allow = AA_ALL;
-			} else {
-				usage(argv[0]);
+			foreach ( const QString &allow, args.takeFirst().split(',') ) {
+				if ( allow == "none" ) {
+					access_allow = AA_NONE;
+					break;
+				} else if ( allow == "js" ) {
+					access_allow |= AA_JS;
+				} else if ( allow == "css" ) {
+					access_allow |= AA_CSS;
+				} else if ( allow == "redirect" ) {
+					access_allow |= AA_REDIRECT;
+				} else if ( allow == "all" ) {
+					access_allow |= AA_ALL;
+				} else {
+					usage(argv[0]);
+				}
 			}
 		} else if ( arg == "--js-file" ) {
 			if ( args.isEmpty() ) {
