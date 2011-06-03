@@ -44,6 +44,7 @@ var readability = {
         killBreaks:            /(<br\s*\/?>(\s|&nbsp;?)*){1,}/g,
         videos:                /http:\/\/(www\.)?(youtube|vimeo)\.com/i,
         skipFootnoteLink:      /^\s*(\[?[a-z0-9]{1,2}\]?|^|edit|citation needed)\s*$/i,
+        portletCandidates:     /portlet/i,
     },
 
     /**
@@ -415,6 +416,12 @@ var readability = {
                 continue;
             }
 
+            if (unlikelyMatchString.search(readability.regexps.portletCandidates) !== -1) {
+                    dbg("Removing portlet condidate - " + unlikelyMatchString);
+                    node.parentNode.removeChild(node);
+                    nodeIndex-=1;
+                    continue;
+            }
 
             if (stripUnlikelyCandidates) {
                 if (
