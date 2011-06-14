@@ -389,6 +389,7 @@ var readability = {
         page = page ? page : document.body;
 
         var pageCacheHtml = page.innerHTML;
+        var pageTextLength = page.textContent.length;
 
         var allElements = page.getElementsByTagName('*');
 
@@ -428,7 +429,8 @@ var readability = {
                     (
                         unlikelyMatchString.search(readability.regexps.unlikelyCandidates) !== -1 &&
                         unlikelyMatchString.search(readability.regexps.okMaybeItsACandidate) === -1 &&
-                        node.tagName !== "BODY"
+                        node.tagName !== "BODY" &&
+                        node.textContent.length / pageTextLength < 0.6
                     )
                 )
                 {
