@@ -638,6 +638,12 @@ var readability = {
                 /* To ensure a node does not interfere with readability styles, remove its classnames */
                 nodeToAppend.className = "";
 
+                var element;
+                var allElements = document.getElementsByTagName("*");
+                for (var i = 0; (element = allElements[i]) != null; i++) {
+                    element.style.overflow = "";
+                }
+
                 /* Append sibling and subtract from our list because it removes the node when you append to another node */
                 articleContent.appendChild(nodeToAppend);
             }
