@@ -214,6 +214,9 @@ var readability = {
                 document.styleSheets[k].disabled = true;
             }
         }
+
+        /* Remove all scripts & noscripts */
+        readability.removeScripts(document);
     },
 
     /**
@@ -704,6 +707,12 @@ var readability = {
                 if (scripts[i].parentNode) {
                         scripts[i].parentNode.removeChild(scripts[i]);          
                 }
+            }
+        }
+        var noscripts = doc.getElementsByTagName('noscript');
+        for(var i = noscripts.length-1; i >= 0; i-=1) {
+            if (noscripts[i].parentNode) {
+                noscripts[i].parentNode.removeChild(noscripts[i]);
             }
         }
     },
