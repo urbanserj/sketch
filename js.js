@@ -30,7 +30,7 @@ var readability = {
      * Defined up here so we don't instantiate them repeatedly in loops.
      **/
     regexps: {
-        unlikelyCandidates:    /combx|comment|community|disqus|extra|foot|header|menu|remark|rss|shoutbox|sidebar|sponsor|ad-break|agegate|pagination|pager|popup|tweet|twitter|reference|policy_text|hidden/i,
+        unlikelyCandidates:    /combx|comment|community|disqus|extra|foot|header|menu|remark|rss|shoutbox|sidebar|sponsor|ad-break|agegate|pagination|pager|popup|tweet|twitter|reference|policy_text|hidden|noflash/i,
         okMaybeItsACandidate:  /and|article|body|column|main|shadow/i,
         okMaybeItsADate:       /date|dt|tmstmp/i,
         positive:              /article|body|content|entry|hentry|main|page|pagination|post|text|blog|story/i,
