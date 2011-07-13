@@ -725,7 +725,10 @@ var readability = {
      * @return string
     **/
     getInnerText: function (e, normalizeSpaces) {
-	return e.textContent;
+        var content = e.textContent;
+        if (normalizeSpaces == false)
+            return content;
+        return content.replace(readability.regexps.normalize, ' ');
     },
 
     /**
