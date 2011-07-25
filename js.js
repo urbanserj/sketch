@@ -32,7 +32,6 @@ var readability = {
     regexps: {
         unlikelyCandidates:    /combx|comment|community|disqus|extra|foot|header|menu|remark|rss|shoutbox|sidebar|sponsor|ad-break|agegate|pagination|pager|popup|tweet|twitter|reference|policy_text|hidden|noflash|cover(?:$|\s)|haberl(?:ist|er)/i,
         okMaybeItsACandidate:  /and|article|body|column|main|shadow/i,
-        okMaybeItsADate:       /date|dt|tmstmp/i,
         positive:              /article|body|content|entry|hentry|main|page|pagination|post|text|blog|story/i,
         negative:              /combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|outbrain|promo|related|scroll|shoutbox|sidebar|sponsor|shopping|tags|tool|widget|reference/i,
         extraneous:            /print|archive|comment|discuss|e[\-]?mail|share|reply|all|login|sign|single/i,
@@ -405,23 +404,12 @@ var readability = {
         **/
         var node = null;
         var nodesToScore = [];
-        var dates = [];
         for(var nodeIndex = 0; (node = allElements[nodeIndex]); nodeIndex+=1) {
             /* Remove unlikely candidates */
             var unlikelyMatchString = node.className + node.id;
 
-            /* Detect dates */
-            if (unlikelyMatchString.search(readability.regexps.okMaybeItsADate) !== -1) {
-                var text = node.textContent;
-                if (text.length < 32 &&
-                    text.search(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{1,2},\s+\d{4}(\s+\d{1,2}:\d{1,2}(:\d{1,2})?)?(\s*[AaPp][Mm])?(\s+[A-Z]{3}\W)?/) !== -1) {
-                    dates.push(text);
-                }
-                continue;
-            }
-
             if (unlikelyMatchString.search(readability.regexps.portletCandidates) !== -1) {
-                    dbg("Removing portlet condidate - " + unlikelyMatchString);
+                    dbg("Removing portlet candidate - " + unlikelyMatchString);
                     node.parentNode.removeChild(node);
                     nodeIndex-=1;
                     continue;
@@ -657,12 +645,6 @@ var readability = {
         **/
         readability.prepArticle(articleContent);
 
-        for(var i=0; i < dates.length; i++) {
-            var nodeToAppend = document.createElement("DIV");
-            nodeToAppend.className = "date";
-            nodeToAppend.textContent = dates[i];
-            articleContent.appendChild(nodeToAppend);
-        }
         /**
          * Now that we've gone through the full algorithm, check to see if we got any meaningful content.
          * If we didn't, we may need to re-run grabArticle with different flags set. This gives us a higher
