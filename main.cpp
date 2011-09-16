@@ -71,7 +71,7 @@ class WebPage : public QWebPage {
 class NetworkAccessManager : public QNetworkAccessManager {
 	Q_OBJECT
 	public:
-		NetworkAccessManager(QString url, int allow):
+		NetworkAccessManager(QUrl url, int allow):
 			_url(url), _allow(allow), _running_req(0) {}
 
 		int runningRequests() const {
@@ -118,7 +118,7 @@ class NetworkAccessManager : public QNetworkAccessManager {
 		}
 
 	private:
-		QString _url;
+		QUrl _url;
 		int _allow;
 		int _running_req;
 		QStringList _redirect_urls;
@@ -128,23 +128,23 @@ class NetworkAccessManager : public QNetworkAccessManager {
 class LoadFinished : public QObject {
 	Q_OBJECT
 	public:
-		LoadFinished(QList<PJsGoal> &js, QString url):
+		LoadFinished(QList<PJsGoal> &js, QUrl url):
 			_js(js), _url(url) {};
 
 	public slots:
-		void onLoadFinished( bool ok ) const
+		void onLoadFinished( bool success ) const
 		{
 			static bool proccessing = false;
 
-			WebPage *page = (WebPage *) sender();
-			if ( !ok ) {
+			QWebPage *page = (QWebPage *) sender();
+			if ( !success ) {
 				qWarning() << "loadFinished: any error occurred";
 
 				if ( proccessing )
 					return;
 
 				NetworkAccessManager *networkAccessManager = (NetworkAccessManager *) page->networkAccessManager();
-				if ( networkAccessManager->runningRequests() == 0 && !_url.isEmpty() ) {
+				if ( networkAccessManager->runningRequests() == 0 || !_url.isEmpty() ) {
 					QApplication::exit(EXIT_FAILURE);
 					exit(EXIT_FAILURE);
 				}
@@ -187,39 +187,26 @@ class LoadFinished : public QObject {
 
 	private:
 		QList<PJsGoal> _js;
-		QString _url;
+		QUrl _url;
 };
 
 
 void usage( char *appname, bool fail = true )
 {
 	QTextStream( fail ? stderr : stdout ) << "Usage: " << appname << " [options]" << endl <<
-		"Sketch is a simple non-interactive cli QT-based web browser." << endl <<
-		"It's expecting html document on stdin by dafault. If no js code or" << endl <<
-		"--html or --text option passed, sketch assumes text extraction." << endl <<
 		"" << endl <<
 		"Options:" << endl <<
+		"--baseurl <http://url/>" << endl <<
 		"--url <http://url/>" << endl <<
-		"    Html document to obtain from url." << endl <<
-		"--allow {none,css,js,redirect,all}" << endl <<
-		"    Allows downloading subdocuments and/or resources" << endl <<
-		"--{value|none|text|html}" << endl <<
-		"    Defined what print on stdout when js code complited" << endl <<
-		"    This option affects stated after it js code only" << endl <<
-		"    --value prints returned result (default)" << endl <<
-		"    --none prints nothing" << endl <<
-		"    --text and --html display text and html from the document, respectively." << endl <<
-		"        JS code is optional after the last two options" << endl <<
+		"--mime <mime>" << endl <<
 		"--enable-js" << endl <<
-		"    Allows javasctipt from input html document" << endl <<
 		"--readability" << endl <<
-		"    Apply arc90's readability for extracting text from input document" << endl <<
-		"    Sketch prints plain text of reduced document by default, but you can" << endl <<
-		"    pass --html option _before_ --readability for displaying it in html format" << endl <<
-		"[js-code]" << endl <<
-		"    Javascript-string which will be evaluated after html document is loaded" << endl <<
+		"--readability-html" << endl <<
+		"--js [js-code]" << endl <<
 		"--js-file <file.js>" << endl <<
-		"    Javascript program is read from <file.js> instead of from the command line" << endl;
+		"--js-{value,none,html,text} [js-code]" << endl <<
+		"--js-file-{value,none,html,text} <file.js>" << endl <<
+		"--allow--{none,css,js,redirect,all}" << endl;
 
 	QApplication::exit(EXIT_FAILURE);
 	exit(EXIT_FAILURE);
@@ -235,6 +222,19 @@ QString read_file( QString filename )
 		exit(EXIT_FAILURE);
 	}
 	return file.readAll();
+}
+
+
+JsGoal goal(QString str) {
+	if (str.isNull() || str == "value")
+		return JSVALUE;
+	else if (str == "none")
+		return JSNONE;
+	else if (str == "text")
+		return JSTEXT;
+	else if (str == "html")
+		return JSHTML;
+	return JSUNDEF;
 }
 
 
@@ -277,9 +277,10 @@ int main(int argc, char *argv[])
 
 	QApplication app(argc, argv);
 
-	QString url;
+	QUrl url;
+	QUrl baseurl;
+	QString mime;
 	QList<PJsGoal> js;
-	JsGoal jsgoal = JSUNDEF;
 	bool enable_js = false;
 	int access_allow = AA_NONE;
 
@@ -293,58 +294,55 @@ int main(int argc, char *argv[])
 				usage(argv[0]);
 			}
 			url = args.takeFirst();
-		} else if ( arg == "--value" ) {
-			jsgoal = JSVALUE;
-		} else if ( arg == "--none" ) {
-			jsgoal = JSNONE;
-		} else if ( arg == "--text" ) {
-			jsgoal = JSTEXT;
-		} else if ( arg == "--html" ) {
-			jsgoal = JSHTML;
-		} else if ( arg == "--allow" ) {
-			if ( args.isEmpty() ) {
+		} else if ( arg == "--baseurl" ) {
+			if ( args.isEmpty() || !baseurl.isEmpty() ) {
 				usage(argv[0]);
 			}
-			foreach ( const QString &allow, args.takeFirst().split(',') ) {
-				if ( allow == "none" ) {
-					access_allow = AA_NONE;
-					break;
-				} else if ( allow == "js" ) {
-					access_allow |= AA_JS;
-				} else if ( allow == "css" ) {
-					access_allow |= AA_CSS;
-				} else if ( allow == "redirect" ) {
-					access_allow |= AA_REDIRECT;
-				} else if ( allow == "all" ) {
-					access_allow |= AA_ALL;
-				} else {
-					usage(argv[0]);
-				}
+			baseurl = args.takeFirst();
+		} else if ( arg == "--mime" ) {
+			if ( args.isEmpty() || !mime.isEmpty() ) {
+				usage(argv[0]);
 			}
-		} else if ( arg == "--js-file" ) {
-			if ( args.isEmpty() ) {
+			mime = args.takeFirst();
+		} else if ( arg == "--enable-js" ) {
+			enable_js = true;
+		} else if ( arg == "--allow-none" ) {
+			access_allow = AA_NONE;
+		} else if ( arg == "--allow-js" ) {
+			access_allow |= AA_JS;
+		} else if ( arg == "--allow-css" ) {
+			access_allow |= AA_CSS;
+		} else if ( arg == "--allow-redirect" ) {
+			access_allow |= AA_REDIRECT;
+		} else if ( arg == "--allow-all" ) {
+			access_allow |= AA_ALL;
+		} else if ( arg == "--js-file" || arg.startsWith("--js-file-") ) {
+			JsGoal jsgoal = goal(arg.mid(10));
+			if ( jsgoal == JSUNDEF || args.isEmpty() ) {
 				usage(argv[0]);
 			}
 			QString arg = args.takeFirst();
-			js << PJsGoal(read_file(arg), (jsgoal == JSUNDEF)?JSVALUE:jsgoal);
-			jsgoal = JSUNDEF;
+			js << PJsGoal(read_file(arg), jsgoal);
+		} else if ( arg == "--js" || arg.startsWith("--js-") ) {
+			JsGoal jsgoal = goal(arg.mid(5));
+			if ( jsgoal == JSUNDEF || args.isEmpty() ) {
+				usage(argv[0]);
+			}
+			QString arg = args.takeFirst();
+			js << PJsGoal(arg, jsgoal);
 		} else if ( arg == "--readability" ) {
-			js << PJsGoal(read_file(":/js.js"), (jsgoal == JSUNDEF || jsgoal == JSVALUE)?JSTEXT:jsgoal);
-			jsgoal = JSUNDEF;
-		} else if ( arg == "--enable-js" ) {
-			enable_js = true;
+			js << PJsGoal(read_file(":/js.js"), JSTEXT);
+		} else if ( arg == "--readability-html" ) {
+			js << PJsGoal(read_file(":/js.js"), JSHTML);
 		} else if ( arg == "--help" ) {
 			usage(argv[0], false);
-		} else if ( arg.startsWith("--") ) {
-			usage(argv[0]);
 		} else {
-			js << PJsGoal(arg, (jsgoal == JSUNDEF)?JSVALUE:jsgoal);
-			jsgoal = JSUNDEF;
+			usage(argv[0]);
 		}
 	}
 
-	if ( js.isEmpty() && ( jsgoal == JSHTML || jsgoal == JSTEXT ) ) {
-		js << PJsGoal("", jsgoal);
+	if ( (!baseurl.isEmpty() || !mime.isEmpty()) && !url.isEmpty() ) {
+		usage(argv[0]);
 	}
 
 	if ( js.isEmpty() ) {
@@ -363,8 +361,9 @@ int main(int argc, char *argv[])
 	page.setNetworkAccessManager(&networkAccessManager);
 
 	if ( url.isEmpty() ) {
-		QTextStream in(stdin);
-		page.mainFrame()->setHtml( in.readAll() );
+		QFile in;
+		in.open(stdin, QIODevice::ReadOnly);
+		page.mainFrame()->setContent( in.readAll(), mime, baseurl );
 	} else {
 		page.mainFrame()->setUrl(url);
 	}
