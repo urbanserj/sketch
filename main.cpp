@@ -72,7 +72,8 @@ class WebPage : public QWebPage {
 			return extension == QWebPage::ErrorPageExtension;
 		}
 
-		virtual bool extension ( Extension, const ExtensionOption * option, ExtensionReturn * ) {
+		virtual bool extension ( Extension, const ExtensionOption * option, ExtensionReturn * )
+		{
 			const QWebPage::ErrorPageExtensionOption *info = static_cast<const QWebPage::ErrorPageExtensionOption*>(option);
 
 			qWarning() << "Error loading " << qPrintable(info->url.toString());
@@ -295,6 +296,10 @@ void fontInitialize()
 
 int main(int argc, char *argv[])
 {
+#ifdef Q_WS_QPA
+	setenv("QT_QPA_PLATFORM", "minimal", 0);
+#endif /* Q_WS_QPA */
+
 	fontInitialize();
 
 	/* optimizes start-up: 1.5 times faster */
