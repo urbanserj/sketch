@@ -2,7 +2,7 @@ QT        += webkit network
 SOURCES    = main.cpp
 RESOURCES += main.qrc
 
-unix {
+x11 {
 	CONFIG    += link_pkgconfig
 	PKGCONFIG += fontconfig
 }
