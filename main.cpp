@@ -65,6 +65,32 @@ class WebPage : public QWebPage {
 		{
 			return false;
 		}
+
+	public:
+		virtual bool supportsExtension( Extension extension ) const
+		{
+			return extension == QWebPage::ErrorPageExtension;
+		}
+
+		virtual bool extension ( Extension, const ExtensionOption * option, ExtensionReturn * ) {
+			const QWebPage::ErrorPageExtensionOption *info = static_cast<const QWebPage::ErrorPageExtensionOption*>(option);
+
+			qWarning() << "Error loading " << qPrintable(info->url.toString());
+			const char * msg = qPrintable(info->errorString);
+			switch (info->domain) {
+				case QWebPage::QtNetwork:
+					qWarning() << "Network error (" << info->error << "): " << msg;
+					break;
+				case QWebPage::Http:
+					qWarning() << "HTTP error (" << info->error << "): " << msg;
+					break;
+				case QWebPage::WebKit:
+					qWarning() << "WebKit error (" << info->error << "): " << msg;
+					break;
+			}
+
+			return true;
+		}
 };
 
 
