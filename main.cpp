@@ -90,7 +90,7 @@ class WebPage : public QWebPage {
 					break;
 			}
 
-			return true;
+			return false;
 		}
 };
 
