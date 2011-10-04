@@ -31,6 +31,8 @@
 #include <fontconfig/fontconfig.h>
 #endif /* Q_WS_X11 */
 
+#define FORBIDDEN_URL "forbidden://localhost/"
+
 enum JsGoal { JSUNDEF, JSVALUE, JSHTML, JSTEXT, JSNONE };
 
 typedef QPair<QString, JsGoal> PJsGoal;
@@ -76,6 +78,9 @@ class WebPage : public QWebPage {
 		{
 			const QWebPage::ErrorPageExtensionOption *info = static_cast<const QWebPage::ErrorPageExtensionOption*>(option);
 
+			if ( info->url == QUrl(FORBIDDEN_URL) )
+				return true;
+
 			qWarning() << "Error loading " << qPrintable(info->url.toString());
 			const char * msg = qPrintable(info->errorString);
 			switch (info->domain) {
@@ -120,7 +125,7 @@ class NetworkAccessManager : public QNetworkAccessManager {
 				allow = true;
 
 			if ( !allow )
-				request.setUrl( QUrl("forbidden://localhost/") );
+				request.setUrl( QUrl(FORBIDDEN_URL) );
 
 			QNetworkReply *replay = QNetworkAccessManager::createRequest(op, request, outgoingData);
 
