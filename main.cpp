@@ -188,6 +188,7 @@ class LoadFinished : public QObject {
 			proccessing = true;
 
 			QTextStream out(stdout);
+			out.setCodec("UTF-8");
 
 			/* evaluate javascript */
 			QWebSettings::globalSettings()->setAttribute(QWebSettings::JavascriptEnabled, true);
@@ -238,7 +239,7 @@ void usage( char *appname, bool fail = true )
 		"--js-file <file.js>" << endl <<
 		"--js-{value,none,html,text} [js-code]" << endl <<
 		"--js-file-{value,none,html,text} <file.js>" << endl <<
-		"--allow--{none,css,js,redirect,all}" << endl;
+		"--allow-{none,css,js,redirect,all}" << endl;
 
 	QApplication::exit(EXIT_FAILURE);
 	exit(EXIT_FAILURE);
