@@ -231,7 +231,6 @@ void usage( char *appname, bool fail = true )
 		"Options:" << endl <<
 		"--baseurl <http://url/>" << endl <<
 		"--url <http://url/>" << endl <<
-		"--mime <mime>" << endl <<
 		"--enable-js" << endl <<
 		"--readability" << endl <<
 		"--readability-html" << endl <<
@@ -316,7 +315,6 @@ int main(int argc, char *argv[])
 
 	QUrl url;
 	QUrl baseurl;
-	QString mime;
 	QList<PJsGoal> js;
 	bool enable_js = false;
 	int access_allow = AA_NONE;
@@ -336,11 +334,6 @@ int main(int argc, char *argv[])
 				usage(argv[0]);
 			}
 			baseurl = args.takeFirst();
-		} else if ( arg == "--mime" ) {
-			if ( args.isEmpty() || !mime.isEmpty() ) {
-				usage(argv[0]);
-			}
-			mime = args.takeFirst();
 		} else if ( arg == "--enable-js" ) {
 			enable_js = true;
 		} else if ( arg == "--allow-none" ) {
@@ -378,7 +371,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ( (!baseurl.isEmpty() || !mime.isEmpty()) && !url.isEmpty() ) {
+	if ( !baseurl.isEmpty() && !url.isEmpty() ) {
 		usage(argv[0]);
 	}
 
@@ -398,9 +391,8 @@ int main(int argc, char *argv[])
 	page.setNetworkAccessManager(&networkAccessManager);
 
 	if ( url.isEmpty() ) {
-		QFile in;
-		in.open(stdin, QIODevice::ReadOnly);
-		page.mainFrame()->setContent( in.readAll(), mime, baseurl );
+		QTextStream in (stdin);
+		page.mainFrame()->setHtml( in.readAll(), baseurl );
 	} else {
 		page.mainFrame()->setUrl(url);
 	}
