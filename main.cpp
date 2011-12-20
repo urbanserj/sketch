@@ -304,6 +304,7 @@ int main(int argc, char *argv[])
 #ifdef Q_WS_QPA
 	setenv("QT_QPA_PLATFORM", "minimal", 0);
 #endif /* Q_WS_QPA */
+	setenv("LANG", "en_US.utf8", 1);
 
 	fontInitialize();
 
