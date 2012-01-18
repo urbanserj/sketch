@@ -1,16 +1,16 @@
 /*
  * Copyright (C) 2010, 2011 by Sergey Urbanovich
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,6 +32,7 @@
 #endif /* Q_WS_X11 */
 
 #define FORBIDDEN_URL "forbidden://localhost/"
+#define STDIN_URL "stdin://localhost/"
 
 enum JsGoal { JSUNDEF, JSVALUE, JSHTML, JSTEXT, JSNONE };
 
@@ -39,7 +40,8 @@ typedef QPair<QString, JsGoal> PJsGoal;
 
 enum AccessAllow { AA_NONE = 0, AA_CSS = 1, AA_JS = 2, AA_REDIRECT = 4, AA_ALL = 8 };
 
-class WebPage : public QWebPage {
+class WebPage : public QWebPage
+{
 	Q_OBJECT
 	protected:
 		virtual QString userAgentForUrl( const QUrl & url ) const
@@ -100,14 +102,83 @@ class WebPage : public QWebPage {
 };
 
 
-class NetworkAccessManager : public QNetworkAccessManager {
+struct NetworkReplyStdinImplPrivate
+{
+	QByteArray content;
+	qint64 offset;
+};
+
+class NetworkReplyStdinImpl: public QNetworkReply
+{
+	Q_OBJECT
+public:
+	NetworkReplyStdinImpl(QObject *parent, const QNetworkAccessManager::Operation op,
+		const QNetworkRequest &req, QByteArray &content, QString &content_type) : QNetworkReply(parent)
+	{
+		d = new NetworkReplyStdinImplPrivate(),
+		setRequest(req);
+		setUrl(req.url());
+		setOperation(op);
+
+		setAttribute(QNetworkRequest::HttpStatusCodeAttribute, 200);
+		setAttribute(QNetworkRequest::HttpReasonPhraseAttribute, "OK");
+
+		d->offset = 0;
+		d->content = content;
+		QNetworkReply::open(QIODevice::ReadOnly | QIODevice::Unbuffered);
+
+		qint64 bsize = d->content.size();
+		setHeader(QNetworkRequest::ContentTypeHeader, content_type);
+		setHeader(QNetworkRequest::ContentLengthHeader, bsize);
+		QMetaObject::invokeMethod(this, "metaDataChanged", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, "downloadProgress", Qt::QueuedConnection,
+		                          Q_ARG(qint64, bsize), Q_ARG(qint64, bsize));
+		QMetaObject::invokeMethod(this, "readyRead", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, "finished", Qt::QueuedConnection);
+	}
+	~NetworkReplyStdinImpl(){ delete d; }
+	virtual void abort() { }
+
+	virtual qint64 bytesAvailable() const
+	{
+		return d->content.size() - d->offset;
+	}
+	virtual bool isSequential () const { return true; }
+
+protected:
+	virtual qint64 readData(char *data, qint64 maxlen)
+	{
+		if (d->offset >= d->content.size())
+			return -1;
+
+		qint64 number = qMin(maxlen, d->content.size() - d->offset);
+		memcpy(data, d->content.constData() + d->offset, number);
+		d->offset += number;
+
+		return number;
+	}
+
+private:
+	struct NetworkReplyStdinImplPrivate *d;
+};
+
+
+class NetworkAccessManager : public QNetworkAccessManager
+{
 	Q_OBJECT
 	public:
 		NetworkAccessManager(QUrl url, int allow):
 			_url(url), _allow(allow), _running_req(0) {}
 
-		int runningRequests() const {
-			return _running_req;
+		int runningRequests() const { return _running_req; }
+
+		void setContent( QByteArray &content, QString &mime )
+		{
+			if ( !content.isEmpty() )
+				in_content = content;
+			else
+				in_content = "<html></html>";
+			content_type = mime;
 		}
 
 	protected:
@@ -117,24 +188,26 @@ class NetworkAccessManager : public QNetworkAccessManager {
 			QString path = request.url().path();
 
 			/* blocking some http requests */
-			bool allow = false;
-			if (  (_allow & AA_ALL) || request.url() == _url ||
+			bool allow = (_allow & AA_ALL) || (request.url() == _url) ||
 				( (_allow & AA_CSS) && path.endsWith(".css", Qt::CaseInsensitive) ) ||
 				( (_allow & AA_JS)  && path.endsWith(".js",  Qt::CaseInsensitive) ) ||
-				( (_allow & AA_REDIRECT) && _redirect_urls.removeOne(request.url().toString()) ) )
-				allow = true;
+				( (_allow & AA_REDIRECT) && _redirect_urls.removeOne(request.url().toString()) );
 
 			if ( !allow )
 				request.setUrl( QUrl(FORBIDDEN_URL) );
 
-			QNetworkReply *replay = QNetworkAccessManager::createRequest(op, request, outgoingData);
-
-			if ( allow ) {
-				++_running_req;
-				connect(replay, SIGNAL(finished()), SLOT(onFinished()));
+			QNetworkReply *reply;
+			if ( request.url() == _url && !in_content.isEmpty() ) {
+				reply = new NetworkReplyStdinImpl(this, op, req, in_content, content_type);
+			} else {
+				reply = QNetworkAccessManager::createRequest(op, request, outgoingData);
 			}
 
-			return replay;
+
+			++_running_req;
+			connect(reply, SIGNAL(finished()), SLOT(onFinished()));
+
+			return reply;
 		}
 
 	public slots:
@@ -142,8 +215,8 @@ class NetworkAccessManager : public QNetworkAccessManager {
 			--_running_req;
 
 			if ( _allow & AA_REDIRECT ) {
-				QNetworkReply *replay = (QNetworkReply *) sender();
-				QUrl redirect_url = replay->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
+				QNetworkReply *reply = (QNetworkReply *) sender();
+				QUrl redirect_url = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
 				if ( !redirect_url.isEmpty() )
 					_redirect_urls << redirect_url.toString();
 			}
@@ -154,10 +227,13 @@ class NetworkAccessManager : public QNetworkAccessManager {
 		int _allow;
 		int _running_req;
 		QStringList _redirect_urls;
+		QByteArray in_content;
+		QString content_type;
 };
 
 
-class LoadFinished : public QObject {
+class LoadFinished : public QObject
+{
 	Q_OBJECT
 	public:
 		LoadFinished(QList<PJsGoal> &js, QUrl url):
@@ -180,10 +256,10 @@ class LoadFinished : public QObject {
 					QApplication::exit(EXIT_FAILURE);
 					exit(EXIT_FAILURE);
 				}
-			
+
 				return;
 			}
-			
+
 			if ( proccessing ) return;
 			proccessing = true;
 
@@ -231,6 +307,7 @@ void usage( char *appname, bool fail = true )
 		"Options:" << endl <<
 		"--baseurl <http://url/>" << endl <<
 		"--url <http://url/>" << endl <<
+		"--mime <mime>" << endl <<
 		"--enable-js" << endl <<
 		"--readability" << endl <<
 		"--readability-html" << endl <<
@@ -316,6 +393,7 @@ int main(int argc, char *argv[])
 
 	QUrl url;
 	QUrl baseurl;
+	QString mime;
 	QList<PJsGoal> js;
 	bool enable_js = false;
 	int access_allow = AA_NONE;
@@ -335,6 +413,11 @@ int main(int argc, char *argv[])
 				usage(argv[0]);
 			}
 			baseurl = args.takeFirst();
+		} else if ( arg == "--mime" ) {
+			if ( args.isEmpty() || !mime.isEmpty() ) {
+				usage(argv[0]);
+			}
+			mime = args.takeFirst();
 		} else if ( arg == "--enable-js" ) {
 			enable_js = true;
 		} else if ( arg == "--allow-none" ) {
@@ -372,12 +455,26 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ( !baseurl.isEmpty() && !url.isEmpty() ) {
+	if ( (!baseurl.isEmpty() || !mime.isEmpty()) && !url.isEmpty() ) {
 		usage(argv[0]);
 	}
 
 	if ( js.isEmpty() ) {
 		js << PJsGoal(read_file(":/js.js"), JSTEXT);
+	}
+
+	bool fromStdin = url.isEmpty();
+
+	if ( fromStdin ) {
+		url = baseurl;
+	}
+
+	if ( url.isEmpty() ) {
+		url = STDIN_URL;
+	}
+
+	if ( url.path().isEmpty() ) {
+		url.setPath("/");
 	}
 
 	QWebSettings *global = QWebSettings::globalSettings();
@@ -391,12 +488,14 @@ int main(int argc, char *argv[])
 	NetworkAccessManager networkAccessManager(url, access_allow);
 	page.setNetworkAccessManager(&networkAccessManager);
 
-	if ( url.isEmpty() ) {
-		QTextStream in (stdin);
-		page.mainFrame()->setHtml( in.readAll(), baseurl );
-	} else {
-		page.mainFrame()->setUrl(url);
+	if ( fromStdin ) {
+		QFile in;
+		in.open(stdin, QIODevice::ReadOnly);
+		QByteArray content = in.readAll();
+		networkAccessManager.setContent(content, mime);
 	}
+
+	page.mainFrame()->setUrl(url);
 
 	return app.exec();
 }
