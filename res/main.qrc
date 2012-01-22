@@ -1,6 +1,7 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-    <file>js.js</file>
+    <file>readability.js</file>
     <file>fonts.conf</file>
+    <file alias="readme">../README.md</file>
 </qresource>
 </RCC>

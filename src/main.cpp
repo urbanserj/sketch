@@ -1,0 +1,70 @@
+/*
+ * Copyright (C) 2010, 2011, 2012 by Sergey Urbanovich
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ */
+
+#include <QApplication>
+#include <qwindowsstyle.h>
+
+#include "networkreplystdinimpl.h"
+#include "networkaccessmanager.h"
+#include "application.h"
+#include "webpage.h"
+#include "utils.h"
+
+int main(int argc, char *argv[])
+{
+#ifdef Q_WS_QPA
+	setenv("QT_QPA_PLATFORM", "minimal", 0);
+#endif /* Q_WS_QPA */
+
+	/* always use unicode for stdout */
+	setenv("LANG", "en_US.utf8", 1);
+
+	fontInitialize();
+
+	/* optimizes start-up: 1.5 times faster */
+	QApplication::setGraphicsSystem("raster");
+	QApplication::setStyle(new QWindowsStyle);
+
+	Application app(argc, argv);
+
+	QWebSettings *global = QWebSettings::globalSettings();
+	global->setAttribute(QWebSettings::JavascriptEnabled, app.enable_js);
+	global->setAttribute(QWebSettings::PrivateBrowsingEnabled, true);
+
+	WebPage *page = new WebPage(app.js);
+	NetworkAccessManager networkAccessManager(app.url, app.allow);
+	page->setNetworkAccessManager(&networkAccessManager);
+
+	if ( app.from_stdin ) {
+		QFile in;
+		in.open(stdin, QIODevice::ReadOnly);
+		QByteArray content = in.readAll();
+		networkAccessManager.setContent(content, app.mime);
+	}
+
+	page->mainFrame()->setUrl(app.url);
+	int exitCode = app.exec();
+	delete page; /* delete QWebPage before QApplication */
+
+	return exitCode;
+}
