@@ -109,6 +109,7 @@ void WebPage::onLoadFinished( bool success ) const
 		NetworkAccessManager *networkAccessManager = (NetworkAccessManager *) this->networkAccessManager();
 		if ( !networkAccessManager->isRunning() ) {
 			QApplication::exit(EXIT_FAILURE);
+			exit(EXIT_FAILURE);
 		}
 		return;
 	}
@@ -143,4 +144,5 @@ void WebPage::onLoadFinished( bool success ) const
 	}
 
 	QApplication::exit();
+	exit(EXIT_SUCCESS);
 }
