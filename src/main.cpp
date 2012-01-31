@@ -24,10 +24,7 @@
 #include <QApplication>
 #include <qwindowsstyle.h>
 
-#include "networkreplystdinimpl.h"
-#include "networkaccessmanager.h"
 #include "application.h"
-#include "webpage.h"
 #include "utils.h"
 
 int main(int argc, char *argv[])
@@ -46,25 +43,5 @@ int main(int argc, char *argv[])
 	QApplication::setStyle(new QWindowsStyle);
 
 	Application app(argc, argv);
-
-	QWebSettings *global = QWebSettings::globalSettings();
-	global->setAttribute(QWebSettings::JavascriptEnabled, app.enable_js);
-	global->setAttribute(QWebSettings::PrivateBrowsingEnabled, true);
-
-	WebPage *page = new WebPage(app.js);
-	NetworkAccessManager networkAccessManager(app.url, app.allow);
-	page->setNetworkAccessManager(&networkAccessManager);
-
-	if ( app.from_stdin ) {
-		QFile in;
-		in.open(stdin, QIODevice::ReadOnly);
-		QByteArray content = in.readAll();
-		networkAccessManager.setContent(content, app.mime);
-	}
-
-	page->mainFrame()->setUrl(app.url);
-	int exitCode = app.exec();
-	delete page; /* delete QWebPage before QApplication */
-
-	return exitCode;
+	return app.exec();
 }

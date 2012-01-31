@@ -27,12 +27,15 @@
 
 #include <QApplication>
 #include "webpage.h"
+#include "networkaccessmanager.h"
 
 class Application: public QApplication
 {
 	Q_OBJECT
 public:
 	Application( int argc, char *argv[] );
+	~Application();
+	int exec();
 
 public:
 	QUrl url;
@@ -41,6 +44,9 @@ public:
 	bool from_stdin;
 	bool enable_js;
 	int allow;
+private:
+	WebPage *page;
+	NetworkAccessManager *networkAccessManager;
 };
 
 

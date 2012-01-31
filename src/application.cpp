@@ -141,3 +141,27 @@ Application::Application( int argc, char *argv[] )
 		url.setPath("/");
 	}
 }
+
+int Application::exec() {
+	QWebSettings *global = QWebSettings::globalSettings();
+	global->setAttribute(QWebSettings::JavascriptEnabled, enable_js);
+	global->setAttribute(QWebSettings::PrivateBrowsingEnabled, true);
+
+	page = new WebPage(js);
+	networkAccessManager = new NetworkAccessManager(url, allow);
+	page->setNetworkAccessManager(networkAccessManager);
+
+	if ( from_stdin ) {
+		QFile in;
+		in.open(stdin, QIODevice::ReadOnly);
+		QByteArray content = in.readAll();
+		networkAccessManager->setContent(content, mime);
+	}
+	page->mainFrame()->setUrl(url);
+	return QCoreApplication::exec();
+}
+
+Application::~Application() {
+	delete page;
+	delete networkAccessManager;
+}
