@@ -146,6 +146,7 @@ int Application::exec() {
 	QWebSettings *global = QWebSettings::globalSettings();
 	global->setAttribute(QWebSettings::JavascriptEnabled, enable_js);
 	global->setAttribute(QWebSettings::PrivateBrowsingEnabled, true);
+	global->setAttribute(QWebSettings::AutoLoadImages, false);
 
 	page = new WebPage(js);
 	networkAccessManager = new NetworkAccessManager(url, allow);
