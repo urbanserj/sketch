@@ -18,6 +18,11 @@ MOC_DIR = src
 OBJECTS_DIR = src
 RCC_DIR = res
 
+unix {
+    QMAKE_CXXFLAGS += $$system(icu-config --cppflags)
+    LIBS += $$system(icu-config --ldflags)
+}
+
 x11 {
     CONFIG    += link_pkgconfig
     PKGCONFIG += fontconfig

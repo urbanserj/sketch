@@ -27,6 +27,9 @@
 #include "application.h"
 #include "utils.h"
 
+#include "unicode/utypes.h"
+#include "unicode/ucsdet.h"
+
 #define STDIN_URL "stdin://localhost/"
 
 
@@ -142,7 +145,8 @@ Application::Application( int argc, char *argv[] )
 	}
 }
 
-int Application::exec() {
+int Application::exec()
+{
 	QWebSettings *global = QWebSettings::globalSettings();
 	global->setAttribute(QWebSettings::JavascriptEnabled, enable_js);
 	global->setAttribute(QWebSettings::PrivateBrowsingEnabled, true);
@@ -157,12 +161,47 @@ int Application::exec() {
 		in.open(stdin, QIODevice::ReadOnly);
 		QByteArray content = in.readAll();
 		networkAccessManager->setContent(content, mime);
+		QString encoding = detectEncoding(content);
+		if ( !encoding.isEmpty() )
+			global->setDefaultTextEncoding(encoding);
 	}
 	page->mainFrame()->setUrl(url);
 	return QCoreApplication::exec();
 }
 
-Application::~Application() {
+Application::~Application()
+{
 	delete page;
 	delete networkAccessManager;
+}
+
+QString Application::detectEncoding( QByteArray& content )
+{
+#if defined (Q_OS_UNIX)
+	const UCharsetMatch **csm;
+	const char *encoding;
+	int32_t matchCount = 0;
+	UErrorCode status = U_ZERO_ERROR;
+
+	UCharsetDetector *csd = ucsdet_open(&status);
+
+	ucsdet_setText(csd, content.constData(), content.size(), &status);
+	if ( U_FAILURE(status) )
+		goto fail;
+
+	csm = ucsdet_detectAll(csd, &matchCount, &status);
+	if ( U_FAILURE(status) || matchCount == 0 )
+		goto fail;
+
+	encoding = ucsdet_getName(csm[0], &status);
+	if ( U_FAILURE(status) )
+		goto fail;
+
+	ucsdet_close(csd);
+	return encoding;
+
+fail:
+	ucsdet_close(csd);
+#endif
+	return "";
 }

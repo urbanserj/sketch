@@ -47,6 +47,8 @@ public:
 private:
 	WebPage *page;
 	NetworkAccessManager *networkAccessManager;
+
+	QString detectEncoding( QByteArray& content );
 };
 
 
