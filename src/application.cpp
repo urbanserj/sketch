@@ -211,11 +211,11 @@ QString Application::detectEncoding( QByteArray& content )
 			if ( U_FAILURE(status) )
 				goto fail;
 			if ( (lang[0] == 'e' && lang[1] == 'n') || /* english    */
-				 (lang[0] == 'e' && lang[1] == 's') || /* spanish    */
-				 (lang[0] == 'p' && lang[1] == 't') || /* portuguese */
-				 (lang[0] == 'd' && lang[1] == 'e') || /* german     */
-				 (lang[0] == 'f' && lang[1] == 'r') || /* french     */
-				 (lang[0] == 'i' && lang[1] == 't')    /* italian    */
+			     (lang[0] == 'e' && lang[1] == 's') || /* spanish    */
+			     (lang[0] == 'p' && lang[1] == 't') || /* portuguese */
+			     (lang[0] == 'd' && lang[1] == 'e') || /* german     */
+			     (lang[0] == 'f' && lang[1] == 'r') || /* french     */
+			     (lang[0] == 'i' && lang[1] == 't')    /* italian    */
 			) {
 				encoding = ucsdet_getName(csm[count], &status);
 				if ( U_FAILURE(status) )
