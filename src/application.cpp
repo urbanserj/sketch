@@ -201,7 +201,7 @@ QString Application::detectEncoding( QByteArray& content )
 		int max_confidence = ucsdet_getConfidence(csm[0], &status);
 		if ( U_FAILURE(status) )
 			goto fail;
-		for ( int count = 1; count < matchCount; ++count ) {
+		for ( int count = 0; count < matchCount; ++count ) {
 			int confidence = ucsdet_getConfidence(csm[count], &status);
 			if ( U_FAILURE(status) )
 				goto fail;
