@@ -124,13 +124,29 @@ void WebPage::onLoadFinished( bool success ) const
 	QWebFrame *frame = this->mainFrame();
 	foreach (const PJsGoal &js, jsC) {
 		QVariant result = frame->evaluateJavaScript(js.first);
-		if ( js.second != JSNONE && result.type() == QVariant::Invalid )
+		if ( js.second == JSNONE )
+			continue;
+		if ( result.type() == QVariant::Invalid ) {
 			qWarning() << "evaluateJavaScript: result is null";
+			break;
+		}
 		switch ( js.second ) {
 			case JSNONE:
 				break;
 			case JSVALUE:
-				out << result.value<QString> () << endl;
+				if ( result.type() == QVariant::String ) {
+					out << result.value<QString> () << endl;
+				} else {
+					QObject jvalue;
+					jvalue.setProperty("v", result);
+					frame->addToJavaScriptWindowObject("jvalue", &jvalue);
+					result = frame->evaluateJavaScript("JSON.stringify(jvalue.v);");
+					if ( result.type() == QVariant::Invalid ) {
+						qWarning() << "evaluateJavaScript: bad value";
+					} else {
+						out << result.value<QString> () << endl;
+					}
+				}
 				break;
 			case JSTEXT:
 				out << frame->toPlainText() << endl;
