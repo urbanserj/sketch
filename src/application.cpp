@@ -63,13 +63,14 @@ static JsGoal goal( QString &str ) {
 }
 
 
-static PJsGoal takeArgJs( QString arg, QStringList &args )
+static PJsGoal takeArgJs( QString arg, QStringList &args, bool ffile = false )
 {
 	JsGoal jsgoal = goal(arg);
 	if ( jsgoal == JSUNDEF || args.isEmpty() ) {
 		usage();
 	}
-	return PJsGoal(args.takeFirst(), jsgoal);
+	QString js = args.takeFirst();
+	return PJsGoal( ( ffile ? read_file(js) : js ), jsgoal);
 }
 
 template <class T>
@@ -110,7 +111,7 @@ Application::Application( int argc, char *argv[] )
 		} else if ( arg == "--allow-all" ) {
 			allow |= AA_ALL;
 		} else if ( arg == "--js-file" || arg.startsWith("--js-file-") ) {
-			js << takeArgJs(arg.mid(10), args);
+			js << takeArgJs(arg.mid(10), args, true);
 		} else if ( arg == "--js" || arg.startsWith("--js-") ) {
 			js << takeArgJs(arg.mid(5), args);
 		} else if ( arg == "--readability" ) {
