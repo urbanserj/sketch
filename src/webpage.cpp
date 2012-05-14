@@ -25,6 +25,7 @@
 #include "utils.h"
 #include "networkaccessmanager.h"
 #include <QApplication>
+#include <QPrinter>
 
 
 WebPage::WebPage( QList<PJsGoal> &js ) : jsC(js)
@@ -123,6 +124,13 @@ void WebPage::onLoadFinished( bool success ) const
 	QWebSettings::globalSettings()->setAttribute(QWebSettings::JavascriptEnabled, true);
 	QWebFrame *frame = this->mainFrame();
 	foreach (const PJsGoal &js, jsC) {
+		if ( js.second == JSPRINT ) {
+			QPrinter printer;
+			printer.setOutputFormat(QPrinter::PdfFormat);
+			printer.setOutputFileName(js.first);
+			frame->print(&printer);
+			continue;
+		}
 		QVariant result = frame->evaluateJavaScript(js.first);
 		if ( js.second == JSNONE )
 			continue;

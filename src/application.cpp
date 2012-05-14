@@ -74,7 +74,7 @@ static PJsGoal takeArgJs( QString arg, QStringList &args, bool ffile = false )
 }
 
 template <class T>
-static QString takeArg( T &arg, QStringList &args )
+static QString takeArg( T arg, QStringList &args )
 {
 	if ( args.isEmpty() || !arg.isEmpty() ) {
 		usage();
@@ -116,6 +116,8 @@ Application::Application( int argc, char *argv[] )
 			js << takeArgJs(arg.mid(5), args);
 		} else if ( arg == "--readability" ) {
 			js << PJsGoal(read_file(":/readability.js"), JSTEXT);
+		} else if ( arg == "--print-to-pdf" ) {
+			js << PJsGoal(takeArg(QString(), args), JSPRINT);
 		} else if ( arg == "--readability-html" ) {
 			js << PJsGoal(read_file(":/readability.js"), JSHTML);
 		} else if ( arg == "--help" ) {

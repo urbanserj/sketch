@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	/* always use unicode for stdout */
 	setenv("LANG", "en_US.utf8", 1);
 
-	fontInitialize();
+	fontInitialize(argc, argv);
 
 	/* optimizes start-up: 1.5 times faster */
 	QApplication::setGraphicsSystem("raster");

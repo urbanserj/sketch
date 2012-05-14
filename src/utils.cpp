@@ -33,12 +33,15 @@
 #include "utils.h"
 
 
-void fontInitialize()
+void fontInitialize(int argc, char *argv[])
 {
 #ifdef Q_WS_X11
 
 #define SKETCH_FONTS_DIR  "/tmp/sketch.fonts/"
 #define SKETCH_FONTS_CONF "/tmp/sketch.fonts.conf"
+	for (int i = 0; i < argc; i++)
+		if ( strstr(argv[i], "--print") == argv[i] )
+			return;
 
 	/* optimizes "rendering": it's 3 times faster now */
 	if ( !QDir(SKETCH_FONTS_DIR).exists() )

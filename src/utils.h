@@ -27,7 +27,7 @@
 
 #define FORBIDDEN_URL "forbidden://localhost/"
 
-void fontInitialize();
+void fontInitialize(int argc, char *argv[]);
 
 
 #endif /* UTILS_H */

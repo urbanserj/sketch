@@ -28,7 +28,7 @@
 #include <QtWebKit>
 #include <QObject>
 
-enum JsGoal { JSUNDEF, JSVALUE, JSHTML, JSTEXT, JSNONE };
+enum JsGoal { JSUNDEF, JSVALUE, JSHTML, JSTEXT, JSNONE, JSPRINT };
 
 typedef QPair<QString, JsGoal> PJsGoal;
 
