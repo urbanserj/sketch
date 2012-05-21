@@ -484,7 +484,7 @@ var readability = {
          * Things like preambles, content split by ads that we removed, etc.
         **/
         var articleContent        = document.createElement("DIV");
-        var siblingScoreThreshold = Math.max(10, topCandidate.readability.contentScore * 0.2);
+        var siblingScoreThreshold = Math.max(10, topCandidate.readability.contentScore * 0.3);
         var siblingNodes          = topCandidate.parentNode.childNodes;
 
 
