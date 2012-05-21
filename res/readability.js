@@ -1,4 +1,4 @@
-var dbg = function(s) {};
+console = { log: function () {} };
 
 /*
  * Readability. An Arc90 Lab Experiment.
@@ -155,7 +155,7 @@ var readability = {
             }
             catch(e) {
                 document.documentElement.appendChild(body);
-                dbg(e);
+                cosole.log(e);
             }
         }
 
@@ -174,7 +174,7 @@ var readability = {
                     canAccessFrame = true;
                 }
                 catch(eFrames) {
-                    dbg(eFrames);
+                    console.log(eFrames);
                 }
 
                 if(frameSize > biggestFrameSize) {
@@ -342,7 +342,7 @@ var readability = {
             var unlikelyMatchString = node.className + node.id;
 
             if (unlikelyMatchString.search(readability.regexps.portletCandidates) !== -1) {
-                    dbg("Removing portlet candidate - " + unlikelyMatchString);
+                    console.log("Removing portlet candidate - " + unlikelyMatchString);
                     node.parentNode.removeChild(node);
                     nodeIndex-=1;
                     continue;
@@ -358,7 +358,7 @@ var readability = {
                     )
                 )
                 {
-                    dbg("Removing unlikely candidate - " + unlikelyMatchString);
+                    console.log("Removing unlikely candidate - " + unlikelyMatchString);
                     node.parentNode.removeChild(node);
                     nodeIndex-=1;
                     continue;
@@ -460,7 +460,7 @@ var readability = {
             **/
             candidates[c].readability.contentScore = candidates[c].readability.contentScore * (1-readability.getLinkDensity(candidates[c]));
 
-            dbg('Candidate: ' + candidates[c] + " (" + candidates[c].className + ":" + candidates[c].id + ") with score " + candidates[c].readability.contentScore);
+            console.log('Candidate: ' + candidates[c] + " (" + candidates[c].className + ":" + candidates[c].id + ") with score " + candidates[c].readability.contentScore);
 
             if(!topCandidate || candidates[c].readability.contentScore > topCandidate.readability.contentScore) {
                 topCandidate = candidates[c]; }
@@ -500,8 +500,8 @@ var readability = {
                 continue;
             }
 
-            dbg("Looking at sibling node: " + siblingNode + " (" + siblingNode.className + ":" + siblingNode.id + ")" + ((typeof siblingNode.readability !== 'undefined') ? (" with score " + siblingNode.readability.contentScore) : ''));
-            dbg("Sibling has score " + (siblingNode.readability ? siblingNode.readability.contentScore : 'Unknown'));
+            console.log("Looking at sibling node: " + siblingNode + " (" + siblingNode.className + ":" + siblingNode.id + ")" + ((typeof siblingNode.readability !== 'undefined') ? (" with score " + siblingNode.readability.contentScore) : ''));
+            console.log("Sibling has score " + (siblingNode.readability ? siblingNode.readability.contentScore : 'Unknown'));
 
             if(siblingNode === topCandidate)
             {
@@ -535,20 +535,20 @@ var readability = {
             }
 
             if(append) {
-                dbg("Appending node: " + siblingNode);
+                console.log("Appending node: " + siblingNode);
 
                 var nodeToAppend = null;
                 if(siblingNode.nodeName !== "DIV" && siblingNode.nodeName !== "P") {
                     /* We have a node that isn't a common block level element, like a form or td tag. Turn it into a div so it doesn't get filtered out later by accident. */
 
-                    dbg("Altering siblingNode of " + siblingNode.nodeName + ' to div.');
+                    console.log("Altering siblingNode of " + siblingNode.nodeName + ' to div.');
                     nodeToAppend = document.createElement("DIV");
                     try {
                         nodeToAppend.id = siblingNode.id;
                         nodeToAppend.innerHTML = siblingNode.innerHTML;
                     }
                     catch(er) {
-                        dbg("Could not alter siblingNode to div, probably an IE restriction, reverting back to original.");
+                        console.log("Could not alter siblingNode to div, probably an IE restriction, reverting back to original.");
                         nodeToAppend = siblingNode;
                         s-=1;
                         sl-=1;
@@ -822,7 +822,7 @@ var readability = {
             var weight = readability.getClassWeight(tagsList[i]);
             var contentScore = (typeof tagsList[i].readability !== 'undefined') ? tagsList[i].readability.contentScore : 0;
 
-            dbg("Cleaning Conditionally " + tagsList[i] + " (" + tagsList[i].className + ":" + tagsList[i].id + ")" + ((typeof tagsList[i].readability !== 'undefined') ? (" with score " + tagsList[i].readability.contentScore) : ''));
+            console.log("Cleaning Conditionally " + tagsList[i] + " (" + tagsList[i].className + ":" + tagsList[i].id + ")" + ((typeof tagsList[i].readability !== 'undefined') ? (" with score " + tagsList[i].readability.contentScore) : ''));
 
             if(weight+contentScore < 0)
             {
