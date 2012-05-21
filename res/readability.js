@@ -1,4 +1,4 @@
-console = { log: function () {} };
+var console = { log: function () {} };
 
 /*
  * Readability. An Arc90 Lab Experiment.
