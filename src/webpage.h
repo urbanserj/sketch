@@ -44,7 +44,7 @@ class WebPage : public QWebPage
 		virtual void javaScriptAlert( QWebFrame *, const QString &msg );
 		virtual bool javaScriptConfirm( QWebFrame *, const QString &msg );
 		virtual void javaScriptConsoleMessage( const QString &message, int lineNumber, const QString & );
-		virtual bool javaScriptPrompt( QWebFrame *, const QString, const QString, QString * );
+		virtual bool javaScriptPrompt( QWebFrame *, const QString &, const QString &, QString * );
 
 	public:
 		virtual bool supportsExtension( Extension extension ) const;

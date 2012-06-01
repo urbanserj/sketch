@@ -62,7 +62,7 @@ void WebPage::javaScriptConsoleMessage( const QString &message, int lineNumber, 
 }
 
 
-bool WebPage::javaScriptPrompt( QWebFrame *, const QString, const QString, QString * )
+bool WebPage::javaScriptPrompt( QWebFrame *, const QString &, const QString &, QString * )
 {
 	return false;
 }
