@@ -32,7 +32,7 @@ var readability = {
         unlikelyCandidates:    /combx|comment|community|disqus|extra|foot|header|menu|remark|rss|shoutbox|sidebar|sponsor|ad-break|agegate|pagination|pager|popup|social|pageshare|share[_-]?(?:button|link)|sharing|tweet|twitter|(?:facebook|googleplus|linkedin|shorturl)-?button|dsq-content|likeplugin|sharethis|shareit|buzz_|pub_?links|reference|policy_text|hidden|noflash|adsense|guidelines|cover(?:$|\s)|haberl(?:ist|er)|dixsw\d+/i,
         okMaybeItsACandidate:  /and|article|body|column|main|shadow/i,
         positive:              /article|body|content|entry|hentry|main|page|pagination|post|text|blog|story|nachricht/i,
-        negative:              /combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|outbrain|promo|related|scroll|shoutbox|sidebar|sponsor|shopping|tags|tool|widget|reference|button|navigation|bottom/i,
+        negative:              /combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|outbrain|promo|related|scroll|shoutbox|sidebar|sponsor|shopping|tags|tool|widget|reference|button|navigation|bottom|registeredbox/i,
         extraneous:            /print|archive|comment|discuss|e[\-]?mail|share|reply|all|login|sign|single/i,
         divToPElements:        /<(a|blockquote|dl|div|img|ol|p|pre|table|ul)/i,
         replaceBrs:            /(<br[^>]*>[ \n\r\t]*){2,}/gi,
