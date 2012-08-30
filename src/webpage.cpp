@@ -27,6 +27,8 @@
 #include <QApplication>
 #include <QPrinter>
 
+#define SELECTOR "br,div,h1,h2,h3,h4,h5,h6,li,p,pre,td,tr,span,tr,ul"
+
 
 WebPage::WebPage( QList<PJsGoal> &js ) : jsC(js)
 {
@@ -156,9 +158,15 @@ void WebPage::onLoadFinished( bool success ) const
 					}
 				}
 				break;
-			case JSTEXT:
+			case JSTEXT: {
+				QWebElementCollection collection = frame->findAllElements(SELECTOR);
+				foreach (QWebElement el, collection) {
+					el.prependOutside("&#x2063;");
+					el.appendOutside("&#x2063;");
+				}
 				out << frame->toPlainText() << endl;
 				break;
+			}
 			case JSHTML:
 				out << frame->toHtml() << endl;
 				break;
